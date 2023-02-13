@@ -2,11 +2,20 @@ import logo from "./logo.svg";
 import "./App.css";
 import { useEffect, useState } from "react";
 import prettyPrint from "./prettyPrint";
-import Tree, { traverse } from "./Tree";
+import { Tree, allocateId, getTreeForTesting, traverse } from "./Tree1";
 document.querySelector("body").innerHTML =
     document.querySelector("body").innerHTML + "<div id='inspect'></div>";
-const tree = new Tree("root");
+const tree = new Tree();
 const siteId = 1;
+
+const tree1 = getTreeForTesting();
+/* traverse(tree1, [3, 7, 8], [8, 1], (node, id) => {
+    if (node !== undefined) console.log(node.data, id);
+}); */
+//allocateId(tree1,[3, 7, 8], [8, 1])
+prettyPrint(tree1);
+
+//console.log("getNodeWithId",tree.getNodeWithId([]))
 
 function App() {
     const [doc, setDoc] = useState([
@@ -16,7 +25,7 @@ function App() {
     const [cursor, setCursor] = useState(0);
 
     useEffect(() => {
-        //prettyPrint(doc);
+        prettyPrint(tree,doc);
     }, [doc]);
 
     const handleChange = (e) => {
@@ -33,24 +42,19 @@ function App() {
                 ];
             });
         } else {
-            const prevId = doc[caret - 1][1].map(item=>item[0])
-            const nextId = doc[caret][1].map(item=>item[0]);
-            //console.log("tree", tree)
-            const idArr = []
-            const cb = (node, id) => {
-              if(node === undefined) idArr.push(id)
-            }
-            traverse(tree.root,cb, prevId, nextId);
-            console.log("idArr", idArr)
-            setDoc((prev) => {
+            const prevId = doc[caret - 1][1]
+            const nextId = doc[caret][1];
+
+            const targetId = allocateId(tree, prevId, nextId, e.nativeEvent.data);
+            /* setDoc((prev) => {
                 return [
                     prev[0],
                     ...prev.slice(1, doc.length - 1).slice(0, caret - 1),
-                    [e.nativeEvent.data, [3, 1]],
+                    [e.nativeEvent.data, targetId],
                     ...prev.slice(1, doc.length - 1).slice(caret - 1, prev.length - 2),
                     prev[prev.length - 1],
                 ];
-            });
+            }); */
         }
 
         //traverse()
