@@ -187,33 +187,34 @@ const getNodeById = (root, id) => {
 
 export const allocateId = (tree, startId, endId, data) => {
     const reducedStartId = startId.map((item) => item[0]);
-    const  reducedEndId = endId.map((item) => item[0]);
+    const reducedEndId = endId.map((item) => item[0]);
     const emptySlotArr = [];
     const idArr = [];
     const cb = (node, id) => {
-        if (node === undefined) {
+        if (node === undefined && id[id.length - 1] !== 0) {
             emptySlotArr.push(id);
         } else {
             idArr.push([id, node]);
         }
     };
-    traverse(tree, reducedStartId, reducedStartId, cb);
+    traverse(tree, reducedStartId, reducedEndId, cb);
     if (emptySlotArr.length > 0) {
         //id for undefined slot
         const targetId = emptySlotArr[Math.floor((emptySlotArr.length - 1) / 2)];
         const parentNode = getNodeById(tree.root, targetId.slice(0, -1));
-        if (parentNode[targetId[targetId.length - 1]] === undefined) {
-            parentNode[targetId[targetId.length - 1]] = new Node(data, targetId);
-            return targetId
+        if (parentNode.children[targetId[targetId.length - 1]] === undefined) {
+            parentNode.children[targetId[targetId.length - 1]] = new Node(data, targetId);
+            return targetId;
         }
         console.log("failed to generate id");
     } else {
         //node for creating a new depth
-        const targetNode = idArr[Math.floor((idArr.length - 1) / 2)];
+        const targetNode = idArr[Math.floor((idArr.length - 1) / 2)][1];
+        const targetId = idArr[Math.floor((idArr.length - 1) / 2)][0];
         if (targetNode.children === null) {
             targetNode.children = new Array(11).fill();
-            targetNode.children[5] = new Node(data, [...targetNode.id, 5]);
-            return [...targetNode.id, 5];
+            targetNode.children[5] = new Node(data, [...targetId, 5]);
+            return [...targetId, 5];
         }
         console.log("failed to generate id");
     }
@@ -255,6 +256,13 @@ export const getTreeForTesting = () => {
     return treeForTesting;
 };
 
-const tree = getTreeForTesting();
+const mergeRemoteChange = (tree, id, data) => {
+    
+};
 
-//traverse(tree.root, [3,7,8],[8,1], (node)=>{console.log(node)})
+/* const tree = getTreeForTesting();
+
+traverse(tree, [3, 7, 8], [8, 1], (node, id) => {
+    console.log(id, node);
+});
+ */

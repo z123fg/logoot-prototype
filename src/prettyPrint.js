@@ -23,14 +23,14 @@ function syntaxHighlight(json) {
     );
   }
   
-  const prettyPrint = (...objs) => {
-    const inspetEl = document.querySelector("#inspect");
-    inspetEl && (inspetEl.innerHTML = "");
-    const elements = objs.forEach((obj) => {
+  const prettyPrint = (inspectEl,...objs) => {
+    //const inspectEl = document.querySelector("#inspect");
+    inspectEl && (inspectEl.innerHTML = "");
+    objs.forEach((obj) => {
       const ele = document.createElement("pre");
       const prettyJSON = syntaxHighlight(JSON.stringify(obj, null, 4));
       ele.innerHTML = prettyJSON;
-      inspetEl?.appendChild(ele);
+      inspectEl?.appendChild(ele);
     });
   
     /*  const prettyJSON = syntaxHighlight(JSON.stringify(obj, null, 4)) ;
