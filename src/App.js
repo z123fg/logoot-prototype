@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Doc from "./Doc";
 const participants = [1, 2];
 const App = () => {
-    const [message, setMessage] = useState(Object.fromEntries(participants.map((siteId) => [siteId, {}])));
+    const [message, setMessage] = useState(Object.fromEntries(participants.map((siteId) => [siteId, []])));
     const emit = (siteId, message) => {
         setMessage((prev) => {
             const nextState = {...prev}
