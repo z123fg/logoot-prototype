@@ -123,19 +123,10 @@ const traverseFrontEnd = (node, startId, endId, cb, id) => {
                 //both start and end
                 if (startId.length <= 1 && !(endId.length <= 1)) {
                     //front-bottom, end
-                    traverseFrontBotomEnd(childNode, endId.slice(1), cb, [
-                        ...id,
-                        i,
-                    ]);
+                    traverseFrontBotomEnd(childNode, endId.slice(1), cb, [...id, i]);
                 } else if (!(startId.length <= 1) && !(endId.length <= 1)) {
                     //front, end
-                    traverseFrontEnd(
-                        childNode,
-                        startId.slice(1),
-                        endId.slice(1),
-                        cb,
-                        [...id, i]
-                    );
+                    traverseFrontEnd(childNode, startId.slice(1), endId.slice(1), cb, [...id, i]);
                 } else {
                     //front-bottom, end-bottom
                     return;
@@ -178,13 +169,7 @@ export const traverse = (tree, startId, endId, cb) => {
                     traverseFrontBotomEnd(childNode, endId.slice(1), cb, [i]);
                 } else if (!(startId.length <= 1) && !(endId.length <= 1)) {
                     //front, end
-                    traverseFrontEnd(
-                        childNode,
-                        startId.slice(1),
-                        endId.slice(1),
-                        cb,
-                        [i]
-                    );
+                    traverseFrontEnd(childNode, startId.slice(1), endId.slice(1), cb, [i]);
                 } else {
                     //front-bottom, end-bottom
                     return;
@@ -215,14 +200,10 @@ export const allocateId = (tree, startId, endId, data) => {
     traverse(tree, reducedStartId, reducedEndId, cb);
     if (emptySlotArr.length > 0) {
         //id for undefined slot
-        const targetId =
-            emptySlotArr[Math.floor((emptySlotArr.length - 1) / 2)];
+        const targetId = emptySlotArr[Math.floor((emptySlotArr.length - 1) / 2)];
         const parentNode = getNodeById(tree.root, targetId.slice(0, -1));
         if (parentNode.children[targetId[targetId.length - 1]] === undefined) {
-            parentNode.children[targetId[targetId.length - 1]] = new Node(
-                data,
-                targetId
-            );
+            parentNode.children[targetId[targetId.length - 1]] = new Node(data, targetId);
             return targetId;
         }
         console.log("failed to generate id");
@@ -245,7 +226,15 @@ export const compareIds = (id1, id2) => {
         if (id1[i][0] > id2[i][0]) return 1;
         if (id1[i][0] < id2[i][0]) return -1;
     }
-    if (id1.length === id2.length) return 0;
+    if (id1.length === id2.length) {
+        if (id1[id1.length - 1][1] > id2[id2.length - 1][1]) {
+            return 1;
+        } else if (id1[id1.length - 1][1] < id2[id2.length - 1][1]) {
+            return -1;
+        } else {
+            return 0
+        }
+    }
     return -1;
 };
 
@@ -312,21 +301,28 @@ export const compareExactId = (id1, id2) => {
     }
 }; */
 
-export const insertRemoteAtom = (doc, atom) => {
+export const insertRemoteAtom = (doc, atom, tree) => {
     const id = atom[1];
     let a = 0;
     let b = doc.length - 1;
     let mid = Math.floor((a + b) / 2);
     const nextDoc = [...doc];
-    console.log();
     while (a <= b) {
+        if (a === b) {
+            if (compareIds(id, doc[a][1]) === 1) {
+                nextDoc.splice(a + 1, 0, atom);
+            } else if (compareIds(id, doc[a][1]) === -1) {
+                nextDoc.splice(a, 0, atom);
+            }
+            return nextDoc;
+        }
         if (compareIds(id, doc[mid][1]) === 1) {
             a = mid + 1;
             mid = Math.floor((a + b) / 2);
         } else if (compareIds(id, doc[mid][1]) === -1) {
             b = mid;
             mid = Math.floor((a + b) / 2);
-        } else {
+        } /* else {
             const remoteSiteId = id[id.length - 1][1];
             const midSiteId = doc[mid][1][doc[mid][1].length - 1][1];
             if (remoteSiteId > midSiteId) {
@@ -337,10 +333,10 @@ export const insertRemoteAtom = (doc, atom) => {
                 console.log("id conflicts with", doc[mid]);
             }
             return nextDoc;
-        }
+        } */
     }
 
-/*     const remoteSiteId = id[id.length - 1][1];
+    /*     const remoteSiteId = id[id.length - 1][1];
     const midSiteId = doc[a][1][doc[a][1].length - 1][1];
 console.log("ab", a, b, remoteSiteId, midSiteId);
     if (remoteSiteId > midSiteId) {
@@ -357,10 +353,17 @@ console.log("ab", a, b, remoteSiteId, midSiteId);
 export const deleteRemoteAtom = (id, doc) => {
     let nextDoc = [...doc];
     nextDoc = nextDoc.filter((atom) => {
-        return !compareExactId(atom[1], id);
+        return compareIds(atom[1], id)!==0;
     });
     return nextDoc;
 };
+const compareMessages = (message1, message2) => {
+
+}
+const insertMessage = (message, messageQ) => {
+    const nextMessageQ = [...messageQ];
+
+}
 
 export const getTreeForTesting = () => {
     const treeForTesting = new Tree();
@@ -386,12 +389,9 @@ export const getTreeForTesting = () => {
     treeForTesting.root.children[3].children[7].children[8] = new Node(8);
     treeForTesting.root.children[3].children[7].children[9] = new Node(9);
 
-    treeForTesting.root.children[3].children[7].children[9].children =
-        new Array(11).fill();
-    treeForTesting.root.children[3].children[7].children[9].children[3] =
-        new Node(3);
-    treeForTesting.root.children[3].children[7].children[9].children[4] =
-        new Node(4);
+    treeForTesting.root.children[3].children[7].children[9].children = new Array(11).fill();
+    treeForTesting.root.children[3].children[7].children[9].children[3] = new Node(3);
+    treeForTesting.root.children[3].children[7].children[9].children[4] = new Node(4);
 
     treeForTesting.root.children[8] = new Node(8);
     treeForTesting.root.children[8].children = new Array(11).fill();
