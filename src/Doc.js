@@ -1,12 +1,19 @@
 import logo from "./logo.svg";
 import "./App.css";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import prettyPrint from "./prettyPrint";
-import { Tree, allocateId, getTreeForTesting, traverse, insertRemoteAtom, deleteRemoteAtom } from "./Tree1";
+import {
+    Tree,
+    allocateId,
+    getTreeForTesting,
+    traverse,
+    insertRemoteAtom,
+    deleteRemoteAtom,
+    MessageQ,
+} from "./Tree1";
 /* document.querySelector("body").innerHTML =
     document.querySelector("body").innerHTML + "<div id='inspect'></div>"; */
 //const tree = new Tree();
-const siteId = 1;
 
 /* const tree1 = getTreeForTesting(); */
 /* traverse(tree1, [3, 7, 8], [8, 1], (node, id) => {
@@ -22,35 +29,40 @@ function Doc({ siteId, message, emit }) {
         ["$", [[0, -1]], 0],
         ["#", [[10, Infinity]], 1],
     ]);
-    const clock = useRef({
-        [siteId]: 2,
-    });
+
+    const [messageBuffer, setMessageBuffer] = useState([]);
+
+
     const { current: tree } = useRef(new Tree());
+
     const inspectEl = useRef();
-    const [cursor, setCursor] = useState(0);
-    const messageQ = useRef([])
+  
+
+    const {
+        current: { clock, messageQ, receive },
+    } = useRef(MessageQ(siteId));
 
     useEffect(() => {
         prettyPrint(inspectEl.current, tree, doc);
     }, [doc]);
-    
-    useEffect(() => {
-        if (!!message) {
-            const remoteSiteId = message.atom[1][message.atom[1].length - 1][1];
-            const remoteClock = message.atom[2];
-            if(clock.current[remoteSiteId] === undefined){
-                clock.current[remoteSiteId] = remoteClock
-            }else{
-                if(remoteClock > clock.current[remoteSiteId] + 1){
-                    messageQ.current = [...messageQ.current, message];
-                }else{
-                    if()
-                }
-            }
-        }
-    }, [message]);
 
-   /*  useEffect(() => {
+    useEffect(() => {
+        setMessageBuffer(prev=>[...prev, message]);
+        console.log("message", siteId)
+    }, [message])
+
+    useEffect(() => {
+        if (messageBuffer.length > 0) {
+           let nextDoc = [...doc]
+            messageBuffer.forEach(message=>{
+               nextDoc = receive(message,nextDoc, tree);
+            })
+            setDoc(nextDoc)
+            setMessageBuffer([])
+        }
+    }, [messageBuffer, doc, tree]);
+
+    /*  useEffect(() => {
         //console.log(siteId, message);
         console.log("messageQ", messageQ, clock.current);
         if (messageQ.length > 0) {
@@ -77,15 +89,8 @@ function Doc({ siteId, message, emit }) {
             }
         }
     }, [messageQ, doc]); */
-
-    useEffect(()=>{
-        if(clock.current[siteId] === undefined){
-            clock.current[siteId]
-        }
-    },[messageQ])
-
+    //console.log("clock", siteId, clock, messageQ);
     const handleChange = (e) => {
-       
         const caret = e.target.selectionEnd;
         if (e.nativeEvent.inputType === "deleteContentBackward") {
             e.target.selectionStart = caret;
@@ -101,7 +106,7 @@ function Doc({ siteId, message, emit }) {
             });
             console.log("deleteAtom", targetAtom);
 
-            emit(siteId, { action: "delete", atom: [...targetAtom.slice(0, 2), clock.current[siteId]++] });
+            emit(siteId, { action: "delete", atom: [...targetAtom.slice(0, 2), ++clock[siteId]] });
         } else {
             const prevId = doc[caret - 1][1];
             const nextId = doc[caret][1];
@@ -116,13 +121,12 @@ function Doc({ siteId, message, emit }) {
                     prev[prev.length - 1],
                 ];
             });
-            /* console.log("insertAtom", [
-                e.nativeEvent.data,
-                targetId.map((id) => [id, siteId]),
-            ]); */
+            
+            console.log("insert", siteId)
+
             emit(siteId, {
                 action: "insert",
-                atom: [e.nativeEvent.data, targetId.map((id) => [id, siteId]), clock.current[siteId]++],
+                atom: [e.nativeEvent.data, targetId.map((id) => [id, siteId]), ++clock[siteId]],
             });
         }
 
@@ -130,11 +134,11 @@ function Doc({ siteId, message, emit }) {
     };
 
     const handleKeyUp = (e) => {
-        console.log(e);
+        //console.log(e);
         if (e.keyCode === 8) {
         }
     };
-
+//console.log("clock", clock)
     return (
         <div className="doc">
             <input

@@ -26,9 +26,9 @@ const traverseInnerNode = (node, cb, id) => {
 };
 
 const traverseFrontBottom = (node, cb, id) => {
-    //console.log("node", node)
+    console.log("node", node, id)
     cb(node, id);
-    if (!node || !node.children) return;
+    if (!node.children) return;
     for (let i = 0; i <= node.children.length; i++) {
         const childNode = node.children[i];
         traverseInnerNode(childNode, cb, [...id, i]);
@@ -37,15 +37,19 @@ const traverseFrontBottom = (node, cb, id) => {
 
 const traverseFront = (node, startId, cb, id) => {
     const startIndex = startId[0];
-    if (!node || !node.children) return;
+    if (!node.children) {
+        node.children = new Array(11).fill();
+    }
     for (let i = startIndex; i <= 10; i++) {
         const childNode = node.children[i];
         if (i === startIndex) {
+            if(!childNode) node.children[i] = new Node(null, [...id,i]);
             if (startId.length <= 1) {
                 // front-bottom
                 traverseFrontBottom(childNode, cb, [...id, i]);
             } else {
                 //front
+
                 traverseFront(childNode, startId.slice(1), cb, [...id, i]);
             }
         } else {
@@ -104,8 +108,10 @@ const traverseFrontEnd = (node, startId, endId, cb, id) => {
             traverseInnerNode(childNode, cb, [...id, i]);
         } else {
             if (i === startIndex && i !== endIndex) {
+                
                 if (startId.length <= 1) {
                     // front-bottom
+                    
                     traverseFrontBottom(childNode, cb, [...id, i]);
                 } else {
                     //front
@@ -140,13 +146,14 @@ export const traverse = (tree, startId, endId, cb) => {
     const root = tree.root;
     const startIndex = startId[0];
     const endIndex = endId[0];
-    if (!root.children) return;
+   // if (!root.children) return;
     for (let i = startIndex; i <= endIndex; i++) {
         const childNode = root.children[i];
         if (i > startIndex && i < endIndex) {
             traverseInnerNode(childNode, cb, [i]);
         } else {
             if (i === startIndex && i !== endIndex) {
+                if(!childNode) root.children[i] = new Node(null, [i])
                 if (startId.length <= 1) {
                     // front-bottom
                     traverseFrontBottom(childNode, cb, [i]);
@@ -188,6 +195,11 @@ const getNodeById = (root, id) => {
 export const allocateId = (tree, startId, endId, data) => {
     const reducedStartId = startId.map((item) => item[0]);
     const reducedEndId = endId.map((item) => item[0]);
+    /* if (getNodeById(tree.root,reducedStartId) === undefined) {
+
+        const parentNode = getNodeById(tree.root, reducedStartId.slice(0, -1));
+        parentNode.children[reducedEndId[reducedStartId - 1]] = new Node(null, reducedStartId);
+    } */
     const emptySlotArr = [];
     const idArr = [];
     const cb = (node, id) => {
@@ -197,7 +209,9 @@ export const allocateId = (tree, startId, endId, data) => {
             idArr.push([id, node]);
         }
     };
+
     traverse(tree, reducedStartId, reducedEndId, cb);
+    console.log("arrs", emptySlotArr, idArr)
     if (emptySlotArr.length > 0) {
         //id for undefined slot
         const targetId = emptySlotArr[Math.floor((emptySlotArr.length - 1) / 2)];
@@ -209,6 +223,7 @@ export const allocateId = (tree, startId, endId, data) => {
         console.log("failed to generate id");
     } else {
         //node for creating a new depth
+        //console.log("idArr", reducedStartId, reducedEndId)
         const targetNode = idArr[Math.floor((idArr.length - 1) / 2)][1];
         const targetId = idArr[Math.floor((idArr.length - 1) / 2)][0];
         if (targetNode.children === null) {
@@ -232,7 +247,7 @@ export const compareIds = (id1, id2) => {
         } else if (id1[id1.length - 1][1] < id2[id2.length - 1][1]) {
             return -1;
         } else {
-            return 0
+            return 0;
         }
     }
     return -1;
@@ -353,17 +368,14 @@ console.log("ab", a, b, remoteSiteId, midSiteId);
 export const deleteRemoteAtom = (id, doc) => {
     let nextDoc = [...doc];
     nextDoc = nextDoc.filter((atom) => {
-        return compareIds(atom[1], id)!==0;
+        return compareIds(atom[1], id) !== 0;
     });
     return nextDoc;
 };
-const compareMessages = (message1, message2) => {
-
-}
+const compareMessages = (message1, message2) => {};
 const insertMessage = (message, messageQ) => {
     const nextMessageQ = [...messageQ];
-
-}
+};
 
 export const getTreeForTesting = () => {
     const treeForTesting = new Tree();
@@ -399,6 +411,121 @@ export const getTreeForTesting = () => {
     treeForTesting.root.children[8].children[2] = new Node(2);
     treeForTesting.root.children[9] = new Node(9);
     return treeForTesting;
+};
+
+const binaryInsert = (element, array, compareFunc, canEqual = false) => {
+    if (array.length === 0) {
+        array.push(element);
+        return array;
+    }
+    let a = 0;
+    let b = array.length - 1;
+    let mid = Math.floor((a + b) / 2);
+    while (a !== b) {
+        const comp = compareFunc(element, array[mid]);
+        if (comp === 1) {
+            a = mid + 1;
+            mid = Math.floor((a + b) / 2);
+        } else if (comp === -1) {
+            b = mid;
+            mid = Math.floor((a + b) / 2);
+        } else {
+            if (canEqual) {
+                array.splice(mid + 1, 0, element);
+            } else {
+                console.log("conflict element!");
+            }
+            return array;
+        }
+    }
+    const comp = compareFunc(element, array[mid]);
+    if (comp === 1) {
+        array.splice(mid + 1, 0, element);
+    } else if (comp === -1) {
+        array.slice(mid, 0, element);
+    } else {
+        if (canEqual) {
+            array.splice(mid + 1, 0, element);
+        } else {
+            console.log("conflict element!");
+        }
+    }
+    return array;
+};
+
+export const MessageQ = (siteId) => {
+    const clock = {
+        [siteId]: 1,
+    };
+
+    const messageQ = {};
+
+    const insertMessage = (message, messageQ) => {
+        const {
+            action,
+            atom: [data, remoteId, remoteClock],
+        } = message;
+        const remoteSiteId = remoteId[remoteId.length - 1][1];
+        const queue = messageQ[remoteSiteId];
+        const compareFun = (message1, message2) => {
+            const clock1 = message1.atom[3];
+            const clock2 = message2.atom[3];
+            return clock1 > clock2 ? 1 : clock2 > clock1 ? -1 : 0;
+        };
+        binaryInsert(message, queue, compareFun);
+    };
+
+    const performAction = (message, doc, tree) => {
+        if (message.action === "insert") {
+            return insertRemoteAtom(doc, message.atom, tree);
+        } else if (message.action === "delete") {
+            return deleteRemoteAtom(message.atom[1], doc);
+        }
+    };
+
+    const receive = (message, doc, tree) => {
+        const {
+            action,
+            atom: [data, remoteId, remoteClock],
+        } = message;
+        const remoteSiteId = remoteId[remoteId.length - 1][1];
+        if (messageQ[remoteSiteId] === undefined) messageQ[remoteSiteId] = [];
+        if (clock[remoteSiteId] === undefined) {
+            clock[remoteSiteId] = remoteClock;
+            console.log("undefined", siteId, remoteSiteId, clock);
+            doc = performAction(message, doc, tree);
+        } else {
+            if (remoteClock !== clock[remoteSiteId] + 1) {
+                insertMessage(message, messageQ);
+            } else {
+                console.log("receive", siteId, message, clock);
+
+                clock[remoteSiteId]++;
+                doc = performAction(message, doc, tree);
+                while (messageQ[remoteSiteId].length > 0) {
+                    const curMessage = messageQ[remoteSiteId][0];
+                    const {
+                        action,
+                        atom: [data, curId, curClock],
+                    } = curMessage;
+
+                    if (curClock !== curClock[remoteSiteId] + 1) {
+                        break;
+                    } else {
+                        messageQ[remoteSiteId].shift();
+                        clock[remoteSiteId]++;
+                        doc = performAction(curMessage, doc, tree);
+                    }
+                }
+            }
+        }
+        return doc;
+    };
+    return {
+        clock,
+        messageQ,
+        receive,
+    };
 };
 
 /* const tree = getTreeForTesting();

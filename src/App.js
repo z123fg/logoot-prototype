@@ -4,7 +4,7 @@ const participants = [1, 2];
 const App = () => {
     const [message, setMessage] = useState(
         Object.fromEntries(
-            participants.map((siteId) => [siteId, { atom: [null, [[2, siteId]], 2], action: "delete" }])
+            participants.map((siteId) => [siteId, { atom: [null, [[2, siteId===1?2:1]], 1], action: "delete" }])
         )
     );
 
